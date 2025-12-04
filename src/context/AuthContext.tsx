@@ -1,7 +1,6 @@
 import React, {createContext, useState, useEffect, ReactNode} from 'react';
 import {User, AuthContextType} from '../types';
 import {storeUser, getUser, removeUser} from '../utils/storage';
-import {authApi} from '../api';
 
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
@@ -9,25 +8,34 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
+const DUMMY_USERS: Array<User & {password: string}> = [
+  {
+    id: '1',
+    name: 'Test User',
+    email: 'test@test.com',
+    password: '123456',
+  },
+];
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const restoreSession = async () => {
+    const restoreUser = async () => {
       try {
         const storedUser = await getUser();
         if (storedUser) {
           setUser(storedUser);
         }
       } catch (error) {
-        console.error('Failed to restore session:', error);
+        console.error('Error restoring user:', error);
       } finally {
         setIsLoading(false);
       }
     };
 
-    restoreSession();
+    restoreUser();
   }, []);
 
   const login = async (
@@ -35,16 +43,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
     password: string,
   ): Promise<{success: boolean; error?: string}> => {
     try {
-      const result = await authApi.login(email, password);
-      
-      if (result.success && result.user) {
-        setUser(result.user);
-        await storeUser(result.user);
+      const foundUser = DUMMY_USERS.find(
+        (u) => u.email === email && u.password === password,
+      );
+
+      if (!foundUser) {
+        return {success: false, error: 'Invalid email or password'};
       }
-      
-      return result;
+
+      const userData: User = {
+        id: foundUser.id,
+        name: foundUser.name,
+        email: foundUser.email,
+      };
+
+      setUser(userData);
+      await storeUser(userData);
+
+      return {success: true};
     } catch (error) {
-      return {success: false, error: 'Unable to connect. Please try again.'};
+      return {success: false, error: 'An error occurred during login'};
     }
   };
 
@@ -54,16 +72,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({children}) => {
     password: string,
   ): Promise<{success: boolean; error?: string}> => {
     try {
-      const result = await authApi.signup(name, email, password);
-      
-      if (result.success && result.user) {
-        setUser(result.user);
-        await storeUser(result.user);
+      const existingUser = DUMMY_USERS.find((u) => u.email === email);
+      if (existingUser) {
+        return {success: false, error: 'Email already registered'};
       }
-      
-      return result;
+
+      const newUser: User & {password: string} = {
+        id: String(DUMMY_USERS.length + 1),
+        name,
+        email,
+        password,
+      };
+
+      DUMMY_USERS.push(newUser);
+
+      const userData: User = {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+      };
+
+      setUser(userData);
+      await storeUser(userData);
+
+      return {success: true};
     } catch (error) {
-      return {success: false, error: 'Unable to create account. Please try again.'};
+      return {success: false, error: 'An error occurred during signup'};
     }
   };
 

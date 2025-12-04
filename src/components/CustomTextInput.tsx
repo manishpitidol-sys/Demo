@@ -31,12 +31,12 @@ export const CustomTextInput: React.FC<CustomTextInputProps> = ({
       {label && <Text style={styles.label}>{label}</Text>}
       <View style={styles.inputContainer}>
         <TextInput
-          style={[styles.input, error ? styles.inputError : undefined, style]}
+          style={[styles.input, error && styles.inputError, style]}
           placeholderTextColor="#999"
           secureTextEntry={showPasswordToggle && !isPasswordVisible}
           {...props}
         />
-        {showPasswordToggle && (
+        {showPasswordToggle && onTogglePassword && (
           <TouchableOpacity
             onPress={onTogglePassword}
             style={styles.eyeIcon}

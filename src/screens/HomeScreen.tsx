@@ -1,94 +1,62 @@
-import React, {useState} from 'react';
-import {View, Text, StyleSheet, TouchableOpacity, Alert} from 'react-native';
+import React from 'react';
+import {View, Text, StyleSheet} from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {ScreenContainer} from '../components/ScreenContainer';
 import {PrimaryButton} from '../components/PrimaryButton';
-import {AppLogo} from '../components/AppLogo';
 import {useAuth} from '../context/AuthContext';
 import {colors, spacing, borderRadius, typography} from '../theme';
 
 export const HomeScreen: React.FC = () => {
   const {user, logout} = useAuth();
-  const [loggingOut, setLoggingOut] = useState(false);
 
   const handleLogout = async () => {
-    Alert.alert(
-      'Sign Out',
-      'Are you sure you want to sign out?',
-      [
-        {text: 'Cancel', style: 'cancel'},
-        {
-          text: 'Sign Out',
-          style: 'destructive',
-          onPress: async () => {
-            setLoggingOut(true);
-            try {
-              await logout();
-            } catch (error) {
-              Alert.alert('Error', 'Failed to sign out. Please try again.');
-            } finally {
-              setLoggingOut(false);
-            }
-          },
-        },
-      ],
-      {cancelable: true}
-    );
+    await logout();
+    // Navigation will happen automatically via navigation state
   };
 
   if (!user) {
     return null;
   }
 
-  const firstName = user.name.split(' ')[0];
-
   return (
-    <ScreenContainer scrollable={false}>
+    <ScreenContainer>
       <View style={styles.container}>
         <View style={styles.header}>
-          <AppLogo size="small" />
-          <Text style={styles.greeting} accessibilityRole="text">
-            Hi, {firstName}!
+          <Text style={styles.greeting}>
+            Hello, {user.name.split(' ')[0]} 👋
           </Text>
-          <Text style={styles.subtitle}>Here's your profile information</Text>
+          <Text style={styles.subtitle}>Welcome to your account</Text>
         </View>
 
         <View style={styles.card}>
-          <View style={styles.infoRow} accessibilityRole="text">
+          <View style={styles.infoRow}>
             <View style={styles.iconContainer}>
-              <Icon name="person" size={22} color={colors.primary} />
+              <Icon name="person" size={24} color={colors.primary} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Full Name</Text>
-              <Text style={styles.infoValue} accessibilityLabel={`Name: ${user.name}`}>
-                {user.name}
-              </Text>
+              <Text style={styles.infoLabel}>Name</Text>
+              <Text style={styles.infoValue}>{user.name}</Text>
             </View>
           </View>
 
           <View style={styles.divider} />
 
-          <View style={styles.infoRow} accessibilityRole="text">
+          <View style={styles.infoRow}>
             <View style={styles.iconContainer}>
-              <Icon name="email" size={22} color={colors.primary} />
+              <Icon name="email" size={24} color={colors.primary} />
             </View>
             <View style={styles.infoContent}>
-              <Text style={styles.infoLabel}>Email Address</Text>
-              <Text style={styles.infoValue} accessibilityLabel={`Email: ${user.email}`}>
-                {user.email}
-              </Text>
+              <Text style={styles.infoLabel}>Email</Text>
+              <Text style={styles.infoValue}>{user.email}</Text>
             </View>
           </View>
         </View>
 
         <PrimaryButton
-          title="Sign Out"
+          title="Logout"
           onPress={handleLogout}
           variant="danger"
-          loading={loggingOut}
-          disabled={loggingOut}
           style={styles.logoutButton}
-          accessibilityLabel="Sign out of your account"
         />
       </View>
     </ScreenContainer>
@@ -108,8 +76,7 @@ const styles = StyleSheet.create({
   greeting: {
     ...typography.h2,
     color: colors.textPrimary,
-    marginTop: spacing.md,
-    marginBottom: spacing.xs,
+    marginBottom: spacing.sm,
   },
   subtitle: {
     ...typography.body,

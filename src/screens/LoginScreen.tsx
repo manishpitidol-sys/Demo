@@ -6,9 +6,8 @@ import {ScreenContainer} from '../components/ScreenContainer';
 import {TextField} from '../components/TextField';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {TitleText, SubtitleText} from '../components/Typography';
-import {AppLogo} from '../components/AppLogo';
 import {useAuth} from '../context/AuthContext';
-import {getEmailError, getPasswordError} from '../utils/validation';
+import {validateEmail, validatePassword} from '../utils/validation';
 import {RootStackParamList} from '../types';
 import {colors, spacing, borderRadius} from '../theme';
 
@@ -31,13 +30,19 @@ export const LoginScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const validateForm = (): boolean => {
-    const emailError = getEmailError(email);
-    const passwordError = getPasswordError(password);
+    const newErrors: typeof errors = {};
 
-    const newErrors = {
-      ...(emailError && {email: emailError}),
-      ...(passwordError && {password: passwordError}),
-    };
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!validateEmail(email)) {
+      newErrors.email = 'Invalid email format';
+    }
+
+    if (!password) {
+      newErrors.password = 'Password is required';
+    } else if (!validatePassword(password)) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -52,29 +57,19 @@ export const LoginScreen: React.FC = () => {
     setErrors({});
 
     try {
-      const result = await login(email.trim(), password);
+      const result = await login(email, password);
       if (!result.success) {
-        setErrors({general: result.error || 'Invalid credentials'});
+        setErrors({general: result.error || 'Login failed'});
       }
-    } catch (error) {
+    } catch (err) {
       setErrors({general: 'Something went wrong. Please try again.'});
     } finally {
       setLoading(false);
     }
   };
 
-  const handleEmailChange = (text: string) => {
-    setEmail(text);
-    if (errors.email) {
-      setErrors({...errors, email: undefined});
-    }
-  };
-
-  const handlePasswordChange = (text: string) => {
-    setPassword(text);
-    if (errors.password) {
-      setErrors({...errors, password: undefined});
-    }
+  const handleSignupPress = () => {
+    navigation.navigate('Signup');
   };
 
   return (
@@ -82,66 +77,59 @@ export const LoginScreen: React.FC = () => {
       <View style={styles.container}>
         <View style={styles.card}>
           <View style={styles.header}>
-            <AppLogo size="medium" />
-            <TitleText style={styles.title}>Welcome Back</TitleText>
-            <SubtitleText style={styles.subtitle}>Sign in to continue</SubtitleText>
+            <TitleText>Welcome Back</TitleText>
+            <SubtitleText style={styles.subtitle}>Login to continue</SubtitleText>
           </View>
 
           <View style={styles.form}>
             <TextField
               label="Email"
-              placeholder="your@email.com"
+              placeholder="Enter your email"
               value={email}
-              onChangeText={handleEmailChange}
+              onChangeText={(text: string) => {
+                setEmail(text);
+                if (errors.email) {
+                  setErrors(prev => ({...prev, email: undefined}));
+                }
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              autoComplete="email"
-              textContentType="emailAddress"
               leftIcon="email"
               error={errors.email}
-              accessibilityLabel="Email address"
             />
 
             <TextField
               label="Password"
-              placeholder="Enter password"
+              placeholder="Enter your password"
               value={password}
-              onChangeText={handlePasswordChange}
+              onChangeText={(text: string) => {
+                setPassword(text);
+                if (errors.password) {
+                  setErrors(prev => ({...prev, password: undefined}));
+                }
+              }}
               showPasswordToggle
-              autoComplete="password"
-              textContentType="password"
               leftIcon="lock"
               error={errors.password}
-              accessibilityLabel="Password"
             />
 
             {errors.general && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText} accessibilityRole="alert">
-                  {errors.general}
-                </Text>
-              </View>
+              <Text style={styles.errorText}>{errors.general}</Text>
             )}
 
             <PrimaryButton
-              title="Sign In"
+              title="Login"
               onPress={handleLogin}
               loading={loading}
-              disabled={loading}
               style={styles.loginButton}
-              accessibilityLabel="Sign in to your account"
             />
           </View>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Don't have an account? </Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Signup')}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Navigate to sign up">
-              <Text style={styles.signupLink}>Sign Up</Text>
+            <TouchableOpacity onPress={handleSignupPress} activeOpacity={0.7}>
+              <Text style={styles.signupLink}>Signup</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -174,14 +162,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xxl,
     alignItems: 'center',
   },
-  title: {
-    marginTop: spacing.lg,
-  },
   subtitle: {
-    marginTop: spacing.xs,
-  },
-  errorContainer: {
-    marginBottom: spacing.sm,
+    marginTop: spacing.sm,
   },
   form: {
     width: '100%',

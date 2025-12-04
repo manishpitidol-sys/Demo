@@ -4,8 +4,9 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "types": ["jest", "@testing-library/jest-native"]
   },
-  "include": ["src/**/*", "App.tsx", "*.d.ts"],
+  "include": ["src/**/*", "App.tsx", "*.d.ts", "jest.setup.ts"],
   "exclude": ["node_modules", "babel.config.js", "metro.config.js", "jest.config.js"]
 }

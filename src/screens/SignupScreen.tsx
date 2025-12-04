@@ -6,12 +6,11 @@ import {ScreenContainer} from '../components/ScreenContainer';
 import {TextField} from '../components/TextField';
 import {PrimaryButton} from '../components/PrimaryButton';
 import {TitleText, SubtitleText} from '../components/Typography';
-import {AppLogo} from '../components/AppLogo';
 import {useAuth} from '../context/AuthContext';
 import {
-  getEmailError,
-  getPasswordError,
-  getNameError,
+  validateEmail,
+  validatePassword,
+  validateName,
 } from '../utils/validation';
 import {RootStackParamList} from '../types';
 import {colors, spacing, borderRadius} from '../theme';
@@ -37,15 +36,23 @@ export const SignupScreen: React.FC = () => {
   const [loading, setLoading] = useState(false);
 
   const validateForm = (): boolean => {
-    const nameError = getNameError(name);
-    const emailError = getEmailError(email);
-    const passwordError = getPasswordError(password);
+    const newErrors: typeof errors = {};
 
-    const newErrors = {
-      ...(nameError && {name: nameError}),
-      ...(emailError && {email: emailError}),
-      ...(passwordError && {password: passwordError}),
-    };
+    if (!validateName(name)) {
+      newErrors.name = 'Name is required';
+    }
+
+    if (!email.trim()) {
+      newErrors.email = 'Email is required';
+    } else if (!validateEmail(email)) {
+      newErrors.email = 'Invalid email format';
+    }
+
+    if (!password) {
+      newErrors.password = 'Password is required';
+    } else if (!validatePassword(password)) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -59,37 +66,17 @@ export const SignupScreen: React.FC = () => {
     setLoading(true);
     setErrors({});
 
-    try {
-      const result = await signup(name.trim(), email.trim(), password);
-      if (!result.success) {
-        setErrors({general: result.error || 'Unable to create account'});
-      }
-    } catch (error) {
-      setErrors({general: 'Something went wrong. Please try again.'});
-    } finally {
-      setLoading(false);
+    const result = await signup(name.trim(), email.trim(), password);
+    
+    if (!result.success) {
+      setErrors({general: result.error || 'Signup failed'});
     }
+
+    setLoading(false);
   };
 
-  const handleNameChange = (text: string) => {
-    setName(text);
-    if (errors.name) {
-      setErrors({...errors, name: undefined});
-    }
-  };
-
-  const handleEmailChange = (text: string) => {
-    setEmail(text);
-    if (errors.email) {
-      setErrors({...errors, email: undefined});
-    }
-  };
-
-  const handlePasswordChange = (text: string) => {
-    setPassword(text);
-    if (errors.password) {
-      setErrors({...errors, password: undefined});
-    }
+  const handleLoginPress = () => {
+    navigation.navigate('Login');
   };
 
   return (
@@ -97,81 +84,82 @@ export const SignupScreen: React.FC = () => {
       <View style={styles.container}>
         <View style={styles.card}>
           <View style={styles.header}>
-            <AppLogo size="medium" />
-            <TitleText style={styles.title}>Create Account</TitleText>
+            <TitleText>Create Account</TitleText>
             <SubtitleText style={styles.subtitle}>
-              Join us to get started
+              Join us by creating an account
             </SubtitleText>
+          </View>
+
+          <View style={styles.progressIndicator}>
+            <View style={styles.progressBar}>
+              <View style={styles.progressFill} />
+            </View>
           </View>
 
           <View style={styles.form}>
             <TextField
-              label="Full Name"
-              placeholder="John Doe"
+              label="Name"
+              placeholder="Enter your name"
               value={name}
-              onChangeText={handleNameChange}
+              onChangeText={(text: string) => {
+                setName(text);
+                if (errors.name) {
+                  setErrors(prev => ({...prev, name: undefined}));
+                }
+              }}
               autoCapitalize="words"
-              autoComplete="name"
-              textContentType="name"
               leftIcon="person"
               error={errors.name}
-              accessibilityLabel="Full name"
             />
 
             <TextField
               label="Email"
-              placeholder="your@email.com"
+              placeholder="Enter your email"
               value={email}
-              onChangeText={handleEmailChange}
+              onChangeText={(text: string) => {
+                setEmail(text);
+                if (errors.email) {
+                  setErrors(prev => ({...prev, email: undefined}));
+                }
+              }}
               keyboardType="email-address"
               autoCapitalize="none"
               autoCorrect={false}
-              autoComplete="email"
-              textContentType="emailAddress"
               leftIcon="email"
               error={errors.email}
-              accessibilityLabel="Email address"
             />
 
             <TextField
               label="Password"
-              placeholder="At least 6 characters"
+              placeholder="Enter your password"
               value={password}
-              onChangeText={handlePasswordChange}
+              onChangeText={(text: string) => {
+                setPassword(text);
+                if (errors.password) {
+                  setErrors(prev => ({...prev, password: undefined}));
+                }
+              }}
               showPasswordToggle
-              autoComplete="password-new"
-              textContentType="newPassword"
               leftIcon="lock"
               error={errors.password}
-              accessibilityLabel="Password"
             />
 
             {errors.general && (
-              <View style={styles.errorContainer}>
-                <Text style={styles.errorText} accessibilityRole="alert">
-                  {errors.general}
-                </Text>
-              </View>
+              <Text style={styles.errorText}>{errors.general}</Text>
             )}
 
             <PrimaryButton
-              title="Create Account"
+              title="Signup"
               onPress={handleSignup}
               loading={loading}
-              disabled={loading}
               style={styles.signupButton}
-              accessibilityLabel="Create your account"
             />
           </View>
 
           <View style={styles.footer}>
             <Text style={styles.footerText}>Already have an account? </Text>
-            <TouchableOpacity
-              onPress={() => navigation.navigate('Login')}
-              activeOpacity={0.7}
-              accessibilityRole="button"
-              accessibilityLabel="Navigate to sign in">
-              <Text style={styles.loginLink}>Sign In</Text>
+            <TouchableOpacity onPress={handleLoginPress} activeOpacity={0.7}>
+              <Text style={styles.loginLink}>Login</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -201,17 +189,28 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   header: {
+    marginBottom: spacing.base,
+    alignItems: 'center',
+  },
+  subtitle: {
+    marginTop: spacing.sm,
+  },
+  progressIndicator: {
     marginBottom: spacing.xxl,
     alignItems: 'center',
   },
-  title: {
-    marginTop: spacing.lg,
+  progressBar: {
+    width: 60,
+    height: 4,
+    backgroundColor: colors.borderLight,
+    borderRadius: 2,
+    overflow: 'hidden',
   },
-  subtitle: {
-    marginTop: spacing.xs,
-  },
-  errorContainer: {
-    marginBottom: spacing.sm,
+  progressFill: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: colors.primary,
+    borderRadius: 2,
   },
   form: {
     width: '100%',
@@ -236,9 +235,9 @@ const styles = StyleSheet.create({
     color: colors.primary,
   },
   errorText: {
-    fontSize: 13,
+    fontSize: 12,
     color: colors.error,
+    marginBottom: spacing.sm,
     marginLeft: spacing.sm,
-    lineHeight: 18,
   },
 });
