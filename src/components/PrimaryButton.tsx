@@ -1,4 +1,4 @@
-import React, {useRef} from 'react';
+import React from 'react';
 import {
   TouchableOpacity,
   Text,
@@ -7,7 +7,6 @@ import {
   ViewStyle,
   TextStyle,
   View,
-  Animated,
 } from 'react-native';
 import {colors, typography, borderRadius, spacing} from '../theme';
 
@@ -20,7 +19,6 @@ interface PrimaryButtonProps {
   style?: ViewStyle;
   textStyle?: TextStyle;
   fullWidth?: boolean;
-  accessibilityLabel?: string;
 }
 
 export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
@@ -32,92 +30,60 @@ export const PrimaryButton: React.FC<PrimaryButtonProps> = ({
   style,
   textStyle,
   fullWidth = true,
-  accessibilityLabel,
 }) => {
   const isDisabled = disabled || loading;
-  const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  const handlePressIn = () => {
-    if (!isDisabled) {
-      Animated.spring(scaleAnim, {
-        toValue: 0.96,
-        useNativeDriver: true,
-        friction: 3,
-        tension: 40,
-      }).start();
-    }
-  };
-
-  const handlePressOut = () => {
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 3,
-      tension: 40,
-    }).start();
-  };
 
   return (
-    <Animated.View style={{transform: [{scale: scaleAnim}]}}>
-      <TouchableOpacity
-        style={[
-          styles.button,
-          variant === 'primary' && styles.primaryButton,
-          variant === 'secondary' && styles.secondaryButton,
-          variant === 'danger' && styles.dangerButton,
-          isDisabled && styles.disabledButton,
-          fullWidth && styles.fullWidth,
-          style,
-        ]}
-        onPress={onPress}
-        onPressIn={handlePressIn}
-        onPressOut={handlePressOut}
-        disabled={isDisabled}
-        activeOpacity={1}
-        accessibilityRole="button"
-        accessibilityState={{disabled: isDisabled, busy: loading}}
-        accessibilityLabel={accessibilityLabel || title}
-        accessibilityHint={loading ? 'Processing' : undefined}>
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator
-              color={variant === 'primary' ? colors.white : colors.primary}
-              size="small"
-            />
-          </View>
-        ) : (
-          <Text
-            style={[
-              styles.buttonText,
-              variant === 'primary' && styles.primaryButtonText,
-              variant === 'secondary' && styles.secondaryButtonText,
-              variant === 'danger' && styles.dangerButtonText,
-              isDisabled && styles.disabledText,
-              textStyle,
-            ]}>
-            {title}
-          </Text>
-        )}
-      </TouchableOpacity>
-    </Animated.View>
+    <TouchableOpacity
+      style={[
+        styles.button,
+        variant === 'primary' && styles.primaryButton,
+        variant === 'secondary' && styles.secondaryButton,
+        variant === 'danger' && styles.dangerButton,
+        isDisabled && styles.disabledButton,
+        fullWidth && styles.fullWidth,
+        style,
+      ]}
+      onPress={onPress}
+      disabled={isDisabled}
+      activeOpacity={0.8}>
+      {loading ? (
+        <ActivityIndicator
+          color={variant === 'primary' ? colors.white : colors.primary}
+          size="small"
+        />
+      ) : (
+        <Text
+          style={[
+            styles.buttonText,
+            variant === 'primary' && styles.primaryButtonText,
+            variant === 'secondary' && styles.secondaryButtonText,
+            variant === 'danger' && styles.dangerButtonText,
+            isDisabled && styles.disabledText,
+            textStyle,
+          ]}>
+          {title}
+        </Text>
+      )}
+    </TouchableOpacity>
   );
 };
 
 const styles = StyleSheet.create({
   button: {
-    height: 52,
-    borderRadius: borderRadius.md,
+    height: 56,
+    borderRadius: borderRadius.full,
     justifyContent: 'center',
     alignItems: 'center',
     marginVertical: spacing.sm,
     shadowColor: colors.shadow,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 4,
     },
-    shadowOpacity: 0.8,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOpacity: 1,
+    shadowRadius: 8,
+    elevation: 4,
   },
   primaryButton: {
     backgroundColor: colors.primary,
@@ -155,9 +121,5 @@ const styles = StyleSheet.create({
   },
   disabledText: {
     color: colors.disabledText,
-  },
-  loadingContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
   },
 });

@@ -1,4 +1,4 @@
-import React, {useState, useRef} from 'react';
+import React, {useState} from 'react';
 import {
   View,
   TextInput,
@@ -6,8 +6,6 @@ import {
   StyleSheet,
   TextInputProps,
   TouchableOpacity,
-  Animated,
-  Platform,
 } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import {colors, typography, spacing, borderRadius} from '../theme';
@@ -29,32 +27,18 @@ export const TextField: React.FC<TextFieldProps> = ({
   style,
   onFocus,
   onBlur,
-  accessibilityLabel,
   ...props
 }) => {
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
-  const scaleAnim = useRef(new Animated.Value(1)).current;
 
   const handleFocus = (e: any) => {
     setIsFocused(true);
-    Animated.spring(scaleAnim, {
-      toValue: 1.01,
-      useNativeDriver: true,
-      friction: 3,
-      tension: 40,
-    }).start();
     onFocus?.(e);
   };
 
   const handleBlur = (e: any) => {
     setIsFocused(false);
-    Animated.spring(scaleAnim, {
-      toValue: 1,
-      useNativeDriver: true,
-      friction: 3,
-      tension: 40,
-    }).start();
     onBlur?.(e);
   };
 
@@ -64,32 +48,20 @@ export const TextField: React.FC<TextFieldProps> = ({
     ? colors.primary
     : colors.border;
 
-  const defaultAccessibilityLabel = label || accessibilityLabel || 'Text input';
-
   return (
     <View style={[styles.container, containerStyle]}>
-      {label && (
-        <Text
-          style={styles.label}
-          accessible={false}
-          accessibilityRole="none">
-          {label}
-        </Text>
-      )}
-      <Animated.View
+      {label && <Text style={styles.label}>{label}</Text>}
+      <View
         style={[
           styles.inputContainer,
-          {
-            borderColor,
-            transform: [{scale: scaleAnim}],
-          },
-          isFocused && !error && styles.inputFocused,
-          error && styles.inputError,
+          {borderColor},
+          isFocused ? styles.inputFocused : undefined,
+          error ? styles.inputError : undefined,
         ]}>
         {leftIcon && (
           <Icon
             name={leftIcon}
-            size={20}
+            size={24}
             color={isFocused ? colors.primary : colors.textSecondary}
             style={styles.leftIcon}
           />
@@ -97,43 +69,30 @@ export const TextField: React.FC<TextFieldProps> = ({
         <TextInput
           style={[
             styles.input,
-            leftIcon && styles.inputWithIcon,
-            showPasswordToggle && styles.inputWithToggle,
+            leftIcon ? styles.inputWithIcon : undefined,
+            showPasswordToggle ? styles.inputWithToggle : undefined,
             style,
           ]}
           placeholderTextColor={colors.textTertiary}
           secureTextEntry={showPasswordToggle && !isPasswordVisible}
           onFocus={handleFocus}
           onBlur={handleBlur}
-          accessibilityLabel={error ? `${defaultAccessibilityLabel}, ${error}` : defaultAccessibilityLabel}
-          accessibilityState={{invalid: !!error}}
-          accessibilityHint={showPasswordToggle ? 'Double tap to toggle password visibility' : undefined}
           {...props}
         />
         {showPasswordToggle && (
           <TouchableOpacity
             onPress={() => setIsPasswordVisible(!isPasswordVisible)}
             style={styles.eyeIcon}
-            activeOpacity={0.6}
-            accessibilityRole="button"
-            accessibilityLabel={isPasswordVisible ? 'Hide password' : 'Show password'}
-            accessibilityHint="Double tap to toggle password visibility">
+            activeOpacity={0.7}>
             <Icon
               name={isPasswordVisible ? 'visibility' : 'visibility-off'}
-              size={22}
+              size={24}
               color={colors.textSecondary}
             />
           </TouchableOpacity>
         )}
-      </Animated.View>
-      {error && (
-        <Text
-          style={styles.errorText}
-          accessibilityLiveRegion="polite"
-          accessibilityRole="alert">
-          {error}
-        </Text>
-      )}
+      </View>
+      {error && <Text style={styles.errorText}>{error}</Text>}
     </View>
   );
 };
@@ -150,22 +109,21 @@ const styles = StyleSheet.create({
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    height: 52,
+    height: 56,
     borderWidth: 1.5,
     borderRadius: borderRadius.md,
     backgroundColor: colors.white,
     paddingHorizontal: spacing.base,
   },
   inputFocused: {
-    borderWidth: 2,
     shadowColor: colors.primary,
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 0,
     },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
   inputError: {
     borderColor: colors.error,

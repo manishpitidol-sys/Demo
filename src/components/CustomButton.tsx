@@ -27,28 +27,27 @@ export const CustomButton: React.FC<CustomButtonProps> = ({
   style,
   textStyle,
 }) => {
+  const isPrimary = variant === 'primary';
+  const isDisabled = disabled || loading;
+
   return (
     <TouchableOpacity
       style={[
         styles.button,
-        variant === 'primary' ? styles.primaryButton : styles.secondaryButton,
-        (disabled || loading) && styles.disabledButton,
+        isPrimary ? styles.primaryButton : styles.secondaryButton,
+        isDisabled && styles.disabledButton,
         style,
       ]}
       onPress={onPress}
-      disabled={disabled || loading}
+      disabled={isDisabled}
       activeOpacity={0.7}>
       {loading ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? '#fff' : '#007AFF'}
-        />
+        <ActivityIndicator color={isPrimary ? '#fff' : '#007AFF'} />
       ) : (
         <Text
           style={[
             styles.buttonText,
-            variant === 'primary'
-              ? styles.primaryButtonText
-              : styles.secondaryButtonText,
+            isPrimary ? styles.primaryButtonText : styles.secondaryButtonText,
             textStyle,
           ]}>
           {title}
